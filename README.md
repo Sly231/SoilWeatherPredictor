@@ -1,49 +1,44 @@
-# SoilWeatherPredictor
-SoilWeatherPredictor is an AI-based tool that forecasts soil moisture using weather data like temperature, humidity, and precipitation. Powered by LSTM neural networks and SHAP for explainability, it helps optimize irrigation and crop management for better water resource use in agriculture.
+**SoilWeatherPredictor**
+SoilWeatherPredictor is an AI-powered tool designed to forecast soil moisture levels using real-time weather data, while also recommending the most suitable crops for specific locations across the United States. Leveraging Long Short-Term Memory (LSTM) neural networks for soil moisture prediction and SHAP (SHapley Additive exPlanations) for explainability, this model helps optimize agricultural practices. It takes into account temperature, precipitation, and soil moisture to recommend crops that are best suited for current weather conditions, aiding in irrigation and crop planning for farmers.
 
+**Features**
+**Soil Moisture Prediction:**
+Uses real-time weather data from Meteomatics API to predict soil moisture levels based on key weather inputs such as temperature, precipitation, and wind speed. The LSTM-based model is trained to recognize patterns in historical weather data for accurate moisture forecasts.
 
-### Step-by-Step Explanation of the Code:
+**Crop Recommendations:**
+Based on current weather conditions (temperature, precipitation, and moisture levels), the model provides a stochastic recommendation of suitable crops for different US cities. The crop recommendations are drawn from a variety of crops like corn, wheat, soybeans, barley, and more, with some randomness introduced to account for varying conditions.
 
-1. **Loading and Preprocessing Data**:
-   - Create synthetic datasets with columns like **soil moisture**, **temperature**, **humidity**, and **precipitation**, simulating data collected over time.
-   - This merged data represents the input features (weather variables) and the target output (soil moisture) used to **train the model**.
+**Weather Forecast Visualization:**
+A Plotly-based interactive plot is generated for each city, displaying the forecasted weather parameters (temperature, precipitation, and wind speed) over the next seven days. This helps visualize trends in weather conditions for better planning.
 
-2. **Scaling the Data**:
-   - The features are standardized using **StandardScaler** so that each input (temperature, humidity, etc.) has a mean of 0 and a standard deviation of 1. This scaling is crucial for improving the performance of the **LSTM** model since it helps the network converge faster and learn effectively.
+**Explainable AI:**
+The model utilizes SHAP to explain how different weather features contribute to soil moisture predictions. A SHAP summary plot is generated for each city, providing insights into the impact of different weather parameters on the model’s predictions.
 
-3. **Building the LSTM Model**:
-   - The core of the model is an **LSTM (Long Short-Term Memory)** neural network, which is ideal for processing time-series data like weather patterns.
-   - The LSTM layers capture **temporal dependencies** in the input data—i.e., how past weather affects current soil moisture levels.
-   - **Dropout layers** are added to prevent overfitting by randomly setting input units to 0 during training.
+**How It Works**
+**Weather Data Collection:**
+The model fetches real-time weather data from the Meteomatics API for major US cities, including New York, Los Angeles, Chicago, and others. This data includes hourly temperature, precipitation, and wind speed forecasts for the next seven days.
 
-4. **Reshaping Data**:
-   - The data is reshaped into a 3D format that LSTM requires: (samples, timesteps, features). 
-   - This step prepares the data for sequential learning, where each feature sequence (temperature, humidity, etc.) is passed through the LSTM one timestep at a time.
+**Soil Moisture Prediction:**
+After gathering the weather data, the model uses an LSTM neural network to predict soil moisture levels for each location. The model is trained on past weather and synthetic soil moisture data and can capture temporal patterns effectively.
 
-5. **Training the Model**:
-   - The model is trained for **10 epochs** (cycles through the entire dataset) with a **batch size of 16**. 
-   - It uses **mean squared error (MSE)** as the loss function, which measures the difference between predicted and actual soil moisture values.
-   - After each epoch, the model's performance is evaluated on both the training set and validation set to ensure it generalizes well.
+**Crop Recommendation:**
+Based on the predicted soil moisture, along with real-time temperature and precipitation data, the model recommends suitable crops. These recommendations are made using pre-defined crop suitability thresholds and introduce slight randomness to account for variable conditions, ensuring stochasticity in the recommendations.
 
-6. **Plotting Training Loss**:
-   - A plot of training and validation loss helps visualize how well the model is learning.
-   - **Training loss** should decrease over time, showing that the model is getting better at predicting soil moisture. **Validation loss** indicates how well the model performs on unseen data, helping avoid overfitting.
+**Explainability:**
+SHAP is used to explain the model's predictions, making the results more interpretable. This ensures that users understand the reasoning behind each soil moisture prediction.
 
-### SHAP (Explainability):
+**Weather Visualization:**
+A Plotly-based interactive plot visualizes the weather forecast for each city, including temperature, precipitation, and wind speed over time.
 
-7. **Using SHAP (SHapley Additive exPlanations)**:
-   - SHAP is used to explain **why** the model is making certain predictions by showing the contribution of each input feature (like temperature or humidity).
-   - Reshape the data to a 2D format (samples, features) for SHAP analysis.
-   - SHAP values provide insights into how much each feature affects the predicted soil moisture, offering **interpretability** to users who want to understand **how the model makes decisions**.
+**Key Technologies**
+**Keras (LSTM)**
+Long Short-Term Memory (LSTM) neural networks are used to model the time series data of weather conditions and predict soil moisture levels.
 
-### Code Output:
+**Meteomatics API**
+Provides real-time weather data for various US cities, ensuring the model uses accurate, up-to-date information.
 
-- The **training and validation losses** printed in each epoch show how well the model is learning over time. In the training logs shared:
-  - **Loss** decreases as the model learns, though it may plateau or fluctuate.
-  - **Validation loss** is important—it indicates whether the model is generalizing well to new data.
-  
-- **SHAP summary plot**:
-  - Red and blue dots represent how **high and low values of input features** impact the model’s predictions.
-  - Red dots mean high feature values (e.g., high temperature), while blue dots mean low feature values (e.g., low humidity). Their position along the x-axis shows their effect on soil moisture predictions—whether they push the prediction higher or lower.
+**SHAP (SHapley Additive exPlanations)**
+Offers explainability for the model’s predictions by providing insights into how different features (temperature, precipitation, and wind speed) affect the outcome.
 
-This workflow enables our **SoilWeatherPredictor** to accurately forecast soil moisture based on weather patterns, providing useful insights for **irrigation planning** and **agriculture management**!
+**Plotly**
+For creating interactive plots that visualize weather conditions in an easily understandable format.
