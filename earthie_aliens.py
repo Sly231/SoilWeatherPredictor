@@ -1,4 +1,3 @@
-### Complete Code:
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -10,6 +9,7 @@ import shap
 import tensorflow as tf
 import requests
 from datetime import datetime, timedelta
+import plotly.graph_objects as go
 
 # Set Meteomatics API credentials
 username = 'nasaspacechallenge_aliens_earthie'
@@ -77,12 +77,59 @@ def load_and_merge_datasets(location_name, days=7):
         # Combine into a single dataset
         merged_data = weather_df.copy()
         merged_data['soil_moisture'] = soil_moisture
+        
+        # Weather Plot Visualization
+        visualize_weather_forecast(weather_df, location_name)
+        
         return merged_data
     else:
         print("Error fetching or processing weather data.")
         return None
 
-# Example crop suitability data for different regions with relaxed conditions
+# Visualize the weather forecast
+def visualize_weather_forecast(weather_df, location_name):
+    fig = go.Figure()
+    
+    # Add temperature trace
+    fig.add_trace(go.Scatter(
+        x=weather_df['date'], y=weather_df['temperature'],
+        mode='lines+markers', name='Temperature (°C)',
+        marker=dict(color='red'),
+        hoverinfo='text',
+        text=[f"Temperature: {temp} °C" for temp in weather_df['temperature']]
+    ))
+
+    # Add precipitation trace
+    fig.add_trace(go.Scatter(
+        x=weather_df['date'], y=weather_df['precipitation'],
+        mode='lines+markers', name='Precipitation (mm)',
+        marker=dict(color='blue'),
+        hoverinfo='text',
+        text=[f"Precipitation: {prec} mm" for prec in weather_df['precipitation']]
+    ))
+
+    # Add wind speed trace
+    fig.add_trace(go.Scatter(
+        x=weather_df['date'], y=weather_df['wind_speed'],
+        mode='lines+markers', name='Wind Speed (m/s)',
+        marker=dict(color='green'),
+        hoverinfo='text',
+        text=[f"Wind Speed: {ws} m/s" for ws in weather_df['wind_speed']]
+    ))
+
+    # Update layout
+    fig.update_layout(
+        title=f"Weather Forecast for {location_name}",
+        xaxis_title='Date and Time',
+        yaxis_title='Values',
+        template='plotly_white',
+        showlegend=True
+    )
+    
+    # Show plot
+    fig.show()
+
+# Example crop suitability data for different regions
 crop_data = {
     'Corn': {'temp_range': (8, 40), 'precip_range': (100, 700), 'moisture_range': (15, 60)},
     'Wheat': {'temp_range': (0, 30), 'precip_range': (100, 500), 'moisture_range': (10, 50)},
@@ -92,7 +139,7 @@ crop_data = {
     'Sorghum': {'temp_range': (10, 45), 'precip_range': (50, 400), 'moisture_range': (5, 45)}
 }
 
-# Crop recommendation function with relaxed conditions
+# Crop recommendation function with randomness for stochasticity
 def recommend_crops(current_temp, current_precip, current_moisture):
     suitable_crops = []
     for crop, data in crop_data.items():
@@ -100,20 +147,24 @@ def recommend_crops(current_temp, current_precip, current_moisture):
         precip_range = data['precip_range']
         moisture_range = data['moisture_range']
 
-        # Require at least two conditions to be met for a recommendation
-        conditions_met = 0
-        if temp_range[0] <= current_temp <= temp_range[1]:
-            conditions_met += 1
-        if precip_range[0] <= current_precip <= precip_range[1]:
-            conditions_met += 1
-        if moisture_range[0] <= current_moisture <= moisture_range[1]:
-            conditions_met += 1
+        # Randomly vary the ranges slightly to add stochasticity
+        temp_min = temp_range[0] - np.random.uniform(0, 5)
+        temp_max = temp_range[1] + np.random.uniform(0, 5)
+        precip_min = precip_range[0] - np.random.uniform(0, 50)
+        precip_max = precip_range[1] + np.random.uniform(0, 50)
+        moisture_min = moisture_range[0] - np.random.uniform(0, 5)
+        moisture_max = moisture_range[1] + np.random.uniform(0, 5)
 
-        if conditions_met >= 2:  # Relaxing the condition to require only 2 matches
+        # Check if current conditions fall within the (randomly adjusted) range
+        if (temp_min <= current_temp <= temp_max and
+            precip_min <= current_precip <= precip_max and
+            moisture_min <= current_moisture <= moisture_max):
             suitable_crops.append(crop)
 
     return suitable_crops
 
+
+# Rest of your ML model setup for predicting soil moisture and crop suitability...
 # Data Scaling Function
 def scale_data(data, target_column):
     X = data.drop(columns=['date', target_column])
@@ -153,6 +204,15 @@ for city in locations.keys():
         print(f"Current conditions for {city}: Temp={current_temperature}, Precip={current_precipitation}, Moisture={current_soil_moisture}")
         
         recommended_crops = recommend_crops(current_temperature, current_precipitation, current_soil_moisture)
+        
+        # Visualize the recommended crops on the console
+        if recommended_crops:
+            print(f"Recommended crops for {city}: {', '.join(recommended_crops)}")
+        else:
+            print(f"No suitable crops found for {city}.")
+        
+        # Recommend crops based on current conditions
+        recommended_crops = recommend_crops(current_temperature, current_precipitation, current_soil_moisture)
         print(f"Recommended crops for {city}: {recommended_crops}")
 
         # Reshape for LSTM (samples, timesteps, features)
@@ -163,7 +223,7 @@ for city in locations.keys():
 
         # Build and Train Model
         model = build_model((X_train.shape[1], X_train.shape[2]))
-        history = model.fit(X_train, y_train, epochs=10, batch_size=16, validation_data=(X_test, y_test))
+        history = model.fit(X_train, y_train, epochs=50, batch_size=16, validation_data=(X_test, y_test))
 
         # Plotting the training history
         plt.plot(history.history['loss'], label='Train Loss')
