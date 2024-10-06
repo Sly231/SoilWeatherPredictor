@@ -1,11 +1,11 @@
 # SoilWeatherPredictor
 SoilWeatherPredictor is an AI-based tool that forecasts soil moisture using weather data like temperature, humidity, and precipitation. Powered by LSTM neural networks and SHAP for explainability, it helps optimize irrigation and crop management for better water resource use in agriculture.
-Here's a more accessible breakdown of what your code is doing and why:
+
 
 ### Step-by-Step Explanation of the Code:
 
 1. **Loading and Preprocessing Data**:
-   - You create synthetic datasets with columns like **soil moisture**, **temperature**, **humidity**, and **precipitation**, simulating data collected over time.
+   - Create synthetic datasets with columns like **soil moisture**, **temperature**, **humidity**, and **precipitation**, simulating data collected over time.
    - This merged data represents the input features (weather variables) and the target output (soil moisture) used to **train the model**.
 
 2. **Scaling the Data**:
@@ -33,7 +33,7 @@ Here's a more accessible breakdown of what your code is doing and why:
 
 7. **Using SHAP (SHapley Additive exPlanations)**:
    - SHAP is used to explain **why** the model is making certain predictions by showing the contribution of each input feature (like temperature or humidity).
-   - You reshape the data to a 2D format (samples, features) for SHAP analysis.
+   - Reshape the data to a 2D format (samples, features) for SHAP analysis.
    - SHAP values provide insights into how much each feature affects the predicted soil moisture, offering **interpretability** to users who want to understand **how the model makes decisions**.
 
 ### Code Output:
