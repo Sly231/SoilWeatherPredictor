@@ -38,7 +38,7 @@ SoilWeatherPredictor is an AI-based tool that forecasts soil moisture using weat
 
 ### Code Output:
 
-- The **training and validation losses** printed in each epoch show how well the model is learning over time. In the training logs you shared:
+- The **training and validation losses** printed in each epoch show how well the model is learning over time. In the training logs shared:
   - **Loss** decreases as the model learns, though it may plateau or fluctuate.
   - **Validation loss** is important—it indicates whether the model is generalizing well to new data.
   
