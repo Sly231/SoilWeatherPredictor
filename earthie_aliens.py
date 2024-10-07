@@ -29,6 +29,16 @@ locations = {
     'Boston': (42.3601, -71.0589)
 }
 
+# Define crop data for recommendations (example ranges)
+crop_data = {
+    'Corn': {'temp_range': (8, 40), 'precip_range': (100, 700), 'moisture_range': (15, 60)},
+    'Wheat': {'temp_range': (0, 30), 'precip_range': (100, 500), 'moisture_range': (10, 50)},
+    'Rice': {'temp_range': (10, 35), 'precip_range': (300, 1000), 'moisture_range': (30, 80)},
+    'Soybeans': {'temp_range': (8, 40), 'precip_range': (150, 600), 'moisture_range': (20, 60)},
+    'Barley': {'temp_range': (0, 25), 'precip_range': (80, 400), 'moisture_range': (10, 40)},
+    'Sorghum': {'temp_range': (10, 45), 'precip_range': (50, 400), 'moisture_range': (5, 45)}
+}
+
 # Function to fetch real-time weather data from Meteomatics API
 def fetch_weather_data(lat, lon, days=7):
     start_date = datetime.utcnow()
@@ -44,14 +54,10 @@ def fetch_weather_data(lat, lon, days=7):
 
 # Data Preprocessing and Loading Module using real-time weather data
 def load_and_merge_datasets(location_name, days=7):
-    lat, lon = locations.get(location_name)  # Get the lat/lon from the US cities
-    weather_data = fetch_weather_data(lat, lon, days=days)  # Fetch 7 days of weather data
+    lat, lon = locations.get(location_name)
+    weather_data = fetch_weather_data(lat, lon, days=days)
     if weather_data:
-        # Extracting relevant fields from the weather data
-        times = []
-        temps = []
-        precip = []
-        wind_speed = []
+        times, temps, precip, wind_speed = [], [], [], []
 
         for entry in weather_data['data'][0]['coordinates'][0]['dates']:
             times.append(entry['date'])
@@ -63,7 +69,7 @@ def load_and_merge_datasets(location_name, days=7):
         for entry in weather_data['data'][2]['coordinates'][0]['dates']:
             wind_speed.append(entry['value'])
 
-        # Creating DataFrame
+        # Create DataFrame
         weather_df = pd.DataFrame({
             'date': pd.to_datetime(times),
             'temperature': temps,
@@ -71,16 +77,14 @@ def load_and_merge_datasets(location_name, days=7):
             'wind_speed': wind_speed
         })
 
-        # Generating synthetic soil moisture data (replace with real soil data if available)
-        soil_moisture = np.random.uniform(10, 40, size=(len(times),))  # Random soil moisture for demonstration
-
-        # Combine into a single dataset
+        # Generate synthetic soil moisture data (for demonstration)
+        soil_moisture = np.random.uniform(10, 40, size=(len(times),))
         merged_data = weather_df.copy()
         merged_data['soil_moisture'] = soil_moisture
-        
+
         # Weather Plot Visualization
         visualize_weather_forecast(weather_df, location_name)
-        
+
         return merged_data
     else:
         print("Error fetching or processing weather data.")
@@ -89,7 +93,7 @@ def load_and_merge_datasets(location_name, days=7):
 # Visualize the weather forecast
 def visualize_weather_forecast(weather_df, location_name):
     fig = go.Figure()
-    
+
     # Add temperature trace
     fig.add_trace(go.Scatter(
         x=weather_df['date'], y=weather_df['temperature'],
@@ -117,7 +121,6 @@ def visualize_weather_forecast(weather_df, location_name):
         text=[f"Wind Speed: {ws} m/s" for ws in weather_df['wind_speed']]
     ))
 
-    # Update layout
     fig.update_layout(
         title=f"Weather Forecast for {location_name}",
         xaxis_title='Date and Time',
@@ -125,37 +128,24 @@ def visualize_weather_forecast(weather_df, location_name):
         template='plotly_white',
         showlegend=True
     )
-    
-    # Show plot
+
     fig.show()
 
-# Example crop suitability data for different regions
-crop_data = {
-    'Corn': {'temp_range': (8, 40), 'precip_range': (100, 700), 'moisture_range': (15, 60)},
-    'Wheat': {'temp_range': (0, 30), 'precip_range': (100, 500), 'moisture_range': (10, 50)},
-    'Rice': {'temp_range': (10, 35), 'precip_range': (300, 1000), 'moisture_range': (30, 80)},
-    'Soybeans': {'temp_range': (8, 40), 'precip_range': (150, 600), 'moisture_range': (20, 60)},
-    'Barley': {'temp_range': (0, 25), 'precip_range': (80, 400), 'moisture_range': (10, 40)},
-    'Sorghum': {'temp_range': (10, 45), 'precip_range': (50, 400), 'moisture_range': (5, 45)}
-}
-
-# Crop recommendation function with randomness for stochasticity
+# Function to recommend crops with detailed logging
 def recommend_crops(current_temp, current_precip, current_moisture):
     suitable_crops = []
+    print(f"\nChecking conditions: Temp={current_temp}, Precip={current_precip}, Moisture={current_moisture}\n")
+    
     for crop, data in crop_data.items():
-        temp_range = data['temp_range']
-        precip_range = data['precip_range']
-        moisture_range = data['moisture_range']
+        temp_min = data['temp_range'][0] - 5
+        temp_max = data['temp_range'][1] + 5
+        precip_min = data['precip_range'][0] - 50
+        precip_max = data['precip_range'][1] + 50
+        moisture_min = data['moisture_range'][0] - 3
+        moisture_max = data['moisture_range'][1] + 3
 
-        # Randomly vary the ranges slightly to add stochasticity
-        temp_min = temp_range[0] - np.random.uniform(0, 5)
-        temp_max = temp_range[1] + np.random.uniform(0, 5)
-        precip_min = precip_range[0] - np.random.uniform(0, 50)
-        precip_max = precip_range[1] + np.random.uniform(0, 50)
-        moisture_min = moisture_range[0] - np.random.uniform(0, 5)
-        moisture_max = moisture_range[1] + np.random.uniform(0, 5)
+        print(f"Checking {crop}: Temp Range=({temp_min}, {temp_max}), Precip Range=({precip_min}, {precip_max}), Moisture Range=({moisture_min}, {moisture_max})")
 
-        # Check if current conditions fall within the (randomly adjusted) range
         if (temp_min <= current_temp <= temp_max and
             precip_min <= current_precip <= precip_max and
             moisture_min <= current_moisture <= moisture_max):
@@ -163,92 +153,26 @@ def recommend_crops(current_temp, current_precip, current_moisture):
 
     return suitable_crops
 
-
-# Rest of your ML model setup for predicting soil moisture and crop suitability...
-# Data Scaling Function
-def scale_data(data, target_column):
-    X = data.drop(columns=['date', target_column])
-    y = data[target_column]
-
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-
-    return X_scaled, y
-
-# Model Building Function
-def build_model(input_shape):
-    model = Sequential()
-    model.add(Input(shape=input_shape))  # Set input shape properly
-    model.add(LSTM(64, return_sequences=True))
-    model.add(Dropout(0.2))
-    model.add(LSTM(64, return_sequences=False))
-    model.add(Dropout(0.2))
-    model.add(Dense(1))
-    model.compile(optimizer='adam', loss='mean_squared_error')
-    return model
-
 # Loop over each US city and apply the model
 for city in locations.keys():
     print(f"\nProcessing data for {city}...\n")
-    
+
     # Load and Scale Data for each city
     data = load_and_merge_datasets(city)
     if data is not None:
-        X_scaled, y = scale_data(data, 'soil_moisture')
+        current_temperature = data['temperature'].mean()
+        current_precipitation = data['precipitation'].mean()
+        current_soil_moisture = data['soil_moisture'].mean()
 
-        # Use real-time weather data to recommend crops
-        current_temperature = data['temperature'].mean()  # Average temperature over the period
-        current_precipitation = data['precipitation'].mean()  # Average precipitation over the period
-        current_soil_moisture = y.mean()  # Average predicted soil moisture (or replace with actual data)
+        print(f"\nCurrent conditions for {city}: Temp={current_temperature}, Precip={current_precipitation}, Moisture={current_soil_moisture}\n")
 
-        print(f"Current conditions for {city}: Temp={current_temperature}, Precip={current_precipitation}, Moisture={current_soil_moisture}")
-        
+        # Recommend crops based on real-time weather data
         recommended_crops = recommend_crops(current_temperature, current_precipitation, current_soil_moisture)
-        
-        # Visualize the recommended crops on the console
+
+        # Visualize the recommended crops
         if recommended_crops:
-            print(f"Recommended crops for {city}: {', '.join(recommended_crops)}")
+            print(f"Recommended crops for {city}: {', '.join(recommended_crops)}\n")
         else:
-            print(f"No suitable crops found for {city}.")
-        
-        # Recommend crops based on current conditions
-        recommended_crops = recommend_crops(current_temperature, current_precipitation, current_soil_moisture)
-        print(f"Recommended crops for {city}: {recommended_crops}")
-
-        # Reshape for LSTM (samples, timesteps, features)
-        X_scaled_3d = X_scaled.reshape((X_scaled.shape[0], 1, X_scaled.shape[1]))
-
-        # Train-Test Split
-        X_train, X_test, y_train, y_test = train_test_split(X_scaled_3d, y, test_size=0.2, random_state=42)
-
-        # Build and Train Model
-        model = build_model((X_train.shape[1], X_train.shape[2]))
-        history = model.fit(X_train, y_train, epochs=50, batch_size=16, validation_data=(X_test, y_test))
-
-        # Plotting the training history
-        plt.plot(history.history['loss'], label='Train Loss')
-        plt.plot(history.history['val_loss'], label='Validation Loss')
-        plt.title(f"Loss for {city}")
-        plt.legend()
-        plt.show()
-
-        # SHAP Explanation
-        # Reshape X_test back to 2D for SHAP
-        X_test_2d = X_test.reshape(X_test.shape[0], X_test.shape[2])
-
-        # Define a wrapper for model prediction that reshapes the input to 3D using TensorFlow
-        @tf.function
-        def model_predict_3d(X):
-            X_reshaped = tf.reshape(X, (tf.shape(X)[0], 1, tf.shape(X)[1]))  # Reshape to 3D using TensorFlow
-            return model(X_reshaped)
-
-        # Create SHAP KernelExplainer with reshaped data
-        explainer = shap.KernelExplainer(lambda x: model_predict_3d(x).numpy(), X_test_2d)
-
-        # Calculate SHAP values
-        shap_values = explainer.shap_values(X_test_2d)
-
-        # SHAP Summary Plot
-        shap.summary_plot(shap_values, features=data.drop(columns=['date', 'soil_moisture']).iloc[:len(X_test_2d)], title=f"SHAP Summary for {city}")
+            print(f"No suitable crops found for {city} under current conditions.\n")
     else:
         print(f"Data loading failed for {city}.")
